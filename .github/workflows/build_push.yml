@@ -59,7 +59,7 @@ jobs:
           build-args: |
             FRAPPE_PATH=https://github.com/frappe/frappe
             FRAPPE_BRANCH=version-15
-            APPS_JSON_BASE64=$APPS_JSON_BASE64
+            APPS_JSON_BASE64=${{ env.APPS_JSON_BASE64 }}
           file: ./images/layered/Containerfile
           push: true
           tags: ${{ steps.meta.outputs.tags }}
