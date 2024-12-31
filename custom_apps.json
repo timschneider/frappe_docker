@@ -16,6 +16,10 @@
         "branch": "main"
     },
     {
+        "url": "https://github.com/frappe/webshop",
+        "branch": "version-15"
+    },
+    {
         "url": "https://github.com/alyf-de/erpnext_datev",
         "branch": "version-15"
     },
