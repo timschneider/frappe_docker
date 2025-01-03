@@ -12,6 +12,10 @@ RUN if [ -n "${APPS_JSON_BASE64}" ]; then \
     mkdir /opt/frappe && echo "${APPS_JSON_BASE64}" | base64 -d > /opt/frappe/apps.json; \
   fi
 
+RUN apt update && apt install -y \
+  ghostscript \
+  && apt clean
+
 USER frappe
 
 RUN export APP_INSTALL_ARGS="" && \
