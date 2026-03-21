@@ -266,9 +266,7 @@ def main() -> int:
 
         # Update versions.json
         if erpnext_tag and frappe_tag:
-            ver_updates = update_versions_json(
-                versions_path, frappe_tag, erpnext_tag
-            )
+            ver_updates = update_versions_json(versions_path, frappe_tag, erpnext_tag)
             all_updates.extend(ver_updates)
 
         # Update example.env
