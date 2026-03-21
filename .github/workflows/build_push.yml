@@ -23,6 +23,12 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v6
 
+      - name: Read version config
+        id: versions
+        run: |
+          echo "frappe_build=$(jq -r .frappe_build versions.json)" >> "$GITHUB_OUTPUT"
+          echo "frappe_branch=$(jq -r .frappe_branch versions.json)" >> "$GITHUB_OUTPUT"
+
       - name: Log in to the Container registry
         uses: docker/login-action@v3
         with:
@@ -52,8 +58,8 @@ jobs:
           context: .
           build-args: |
             FRAPPE_PATH=https://github.com/frappe/frappe
-            FRAPPE_BUILD=v15.98.1
-            FRAPPE_BRANCH=v15.100.1
+            FRAPPE_BUILD=${{ steps.versions.outputs.frappe_build }}
+            FRAPPE_BRANCH=${{ steps.versions.outputs.frappe_branch }}
             APPS_JSON_BASE64=${{ env.APPS_JSON_BASE64 }}
           file: ./images/layered/Containerfile
           push: true
