@@ -95,10 +95,10 @@ def load_custom_apps(path: Path) -> list[AppEntry]:
 
 
 def save_custom_apps(path: Path, entries: list[AppEntry]) -> None:
-    """Write entries back to custom_apps.json with indent=4."""
+    """Write entries back to custom_apps.json with indent=2 (prettier-compatible)."""
     data = [{"url": e.url, "branch": e.branch} for e in entries]
     with open(path, "w") as f:
-        json.dump(data, f, indent=4)
+        json.dump(data, f, indent=2)
         f.write("\n")
 
 
@@ -140,41 +140,33 @@ def check_app_updates(entries: list[AppEntry], dry_run: bool = False) -> list[st
     return updates
 
 
-def update_build_push_yml(
+def update_versions_json(
     path: Path,
     frappe_tag: str | None = None,
     erpnext_tag: str | None = None,
 ) -> list[str]:
-    """Update FRAPPE_BUILD and FRAPPE_BRANCH in build_push.yml."""
+    """Update frappe_build and frappe_branch in versions.json."""
     if not path.exists():
-        logger.warning("build_push.yml not found at %s", path)
+        logger.warning("versions.json not found at %s", path)
         return []
 
-    text = path.read_text()
+    with open(path) as f:
+        data = json.load(f)
+
     updates = []
 
-    if erpnext_tag:
-        new_text = re.sub(
-            r"FRAPPE_BUILD=v[\d.]+",
-            f"FRAPPE_BUILD={erpnext_tag}",
-            text,
-        )
-        if new_text != text:
-            updates.append(f"FRAPPE_BUILD -> {erpnext_tag}")
-            text = new_text
+    if erpnext_tag and data.get("frappe_build") != erpnext_tag:
+        data["frappe_build"] = erpnext_tag
+        updates.append(f"frappe_build -> {erpnext_tag}")
 
-    if frappe_tag:
-        new_text = re.sub(
-            r"FRAPPE_BRANCH=v[\d.]+",
-            f"FRAPPE_BRANCH={frappe_tag}",
-            text,
-        )
-        if new_text != text:
-            updates.append(f"FRAPPE_BRANCH -> {frappe_tag}")
-            text = new_text
+    if frappe_tag and data.get("frappe_branch") != frappe_tag:
+        data["frappe_branch"] = frappe_tag
+        updates.append(f"frappe_branch -> {frappe_tag}")
 
     if updates:
-        path.write_text(text)
+        with open(path, "w") as f:
+            json.dump(data, f, indent=2)
+            f.write("\n")
 
     return updates
 
@@ -222,9 +214,7 @@ def main() -> int:
         action="store_true",
         help="Check for updates without modifying files",
     )
-    parser.add_argument(
-        "--verbose", action="store_true", help="Enable verbose logging"
-    )
+    parser.add_argument("--verbose", action="store_true", help="Enable verbose logging")
     parser.add_argument(
         "--repo-root",
         type=Path,
@@ -240,7 +230,7 @@ def main() -> int:
 
     root = args.repo_root
     custom_apps_path = root / "custom_apps.json"
-    build_push_path = root / ".github" / "workflows" / "build_push.yml"
+    versions_path = root / "versions.json"
     example_env_path = root / "example.env"
     pwd_yml_path = root / "pwd.yml"
 
@@ -274,12 +264,10 @@ def main() -> int:
             save_custom_apps(custom_apps_path, entries)
             logger.info("Updated custom_apps.json")
 
-        # Update build_push.yml
+        # Update versions.json
         if erpnext_tag and frappe_tag:
-            yml_updates = update_build_push_yml(
-                build_push_path, frappe_tag, erpnext_tag
-            )
-            all_updates.extend(yml_updates)
+            ver_updates = update_versions_json(versions_path, frappe_tag, erpnext_tag)
+            all_updates.extend(ver_updates)
 
         # Update example.env
         if erpnext_tag:

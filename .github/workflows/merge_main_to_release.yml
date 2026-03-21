@@ -1,0 +1,34 @@
+name: Create release PR from main
+
+on:
+  workflow_dispatch:
+
+jobs:
+  create-release-pr:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Create or update PR
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Check if a PR already exists
+          EXISTING_PR=$(gh pr list --base release --head main --json number --jq '.[0].number')
+
+          if [ -n "$EXISTING_PR" ]; then
+            echo "PR #$EXISTING_PR already exists: $(gh pr view "$EXISTING_PR" --json url --jq .url)"
+          else
+            gh pr create \
+              --base release \
+              --head main \
+              --title "Release: merge main into release" \
+              --body "Automated PR to merge \`main\` into \`release\`."
+          fi

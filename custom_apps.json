@@ -1,38 +1,38 @@
 [
-    {
-        "url": "https://github.com/frappe/erpnext",
-        "branch": "v15.98.1"
-    },
-    {
-        "url": "https://github.com/frappe/payments",
-        "branch": "version-15"
-    },
-    {
-        "url": "https://github.com/frappe/hrms",
-        "branch": "v15.58.1"
-    },
-    {
-        "url": "https://github.com/frappe/ecommerce_integrations",
-        "branch": "v1.20.2"
-    },
-    {
-        "url": "https://github.com/frappe/webshop",
-        "branch": "version-15"
-    },
-    {
-        "url": "https://github.com/alyf-de/erpnext_datev",
-        "branch": "v15.3.6"
-    },
-    {
-        "url": "https://github.com/alyf-de/erpnext_germany",
-        "branch": "v15.23.0"
-    },
-    {
-        "url": "https://github.com/alyf-de/erpnext_pdf-on-submit",
-        "branch": "v15.4.0"
-    },
-    {
-        "url": "https://github.com/alyf-de/eu_einvoice",
-        "branch": "v15.16.2"
-    }
+  {
+    "url": "https://github.com/frappe/erpnext",
+    "branch": "v15.101.3"
+  },
+  {
+    "url": "https://github.com/frappe/payments",
+    "branch": "version-15"
+  },
+  {
+    "url": "https://github.com/frappe/hrms",
+    "branch": "v15.58.4"
+  },
+  {
+    "url": "https://github.com/frappe/ecommerce_integrations",
+    "branch": "v1.20.2"
+  },
+  {
+    "url": "https://github.com/frappe/webshop",
+    "branch": "version-15"
+  },
+  {
+    "url": "https://github.com/alyf-de/erpnext_datev",
+    "branch": "v15.3.6"
+  },
+  {
+    "url": "https://github.com/alyf-de/erpnext_germany",
+    "branch": "v15.23.1"
+  },
+  {
+    "url": "https://github.com/alyf-de/erpnext_pdf-on-submit",
+    "branch": "v15.4.0"
+  },
+  {
+    "url": "https://github.com/alyf-de/eu_einvoice",
+    "branch": "v15.16.2"
+  }
 ]
