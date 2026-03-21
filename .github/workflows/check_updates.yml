@@ -42,7 +42,7 @@ jobs:
           commit-message: "chore: update app versions"
           title: "chore: update app versions"
           body: |
-            Automated update of app versions in `custom_apps.json` and related config files.
+            Automated update of app versions in `custom_apps.json`, `versions.json`, and related config files.
 
             Please review the changes and merge when ready. After merging to `main`,
             cherry-pick or merge into `release` to trigger a new image build.
