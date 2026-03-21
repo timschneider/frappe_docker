@@ -1,13 +1,14 @@
-name: Merge main to release
+name: Create release PR from main
 
 on:
   workflow_dispatch:
 
 jobs:
-  merge-and-release:
+  create-release-pr:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+      pull-requests: write
 
     steps:
       - name: Checkout
@@ -15,10 +16,19 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Merge main into release
+      - name: Create or update PR
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git checkout release
-          git merge origin/main --no-edit
-          git push origin release
+          # Check if a PR already exists
+          EXISTING_PR=$(gh pr list --base release --head main --json number --jq '.[0].number')
+
+          if [ -n "$EXISTING_PR" ]; then
+            echo "PR #$EXISTING_PR already exists: $(gh pr view "$EXISTING_PR" --json url --jq .url)"
+          else
+            gh pr create \
+              --base release \
+              --head main \
+              --title "Release: merge main into release" \
+              --body "Automated PR to merge \`main\` into \`release\`."
+          fi
