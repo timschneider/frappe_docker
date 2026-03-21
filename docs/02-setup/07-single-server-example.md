@@ -1,4 +1,6 @@
-### Single Server Example
+# Single Server Example
+
+This guide demonstrates setting up multiple Frappe/ERPNext benches (projects) on a single server with shared infrastructure components.
 
 In this use case we have a single server with a static IP attached to it. It can be used in scenarios where one powerful VM has multiple benches and applications or one entry level VM with single site. For single bench, single site setup follow only up to the point where first bench and first site is added. If you choose this setup you can only scale vertically. If you need to scale horizontally you'll need to backup the sites and restore them on to cluster setup.
 
@@ -65,7 +67,7 @@ Create a file called `traefik.env` in `~/gitops`
 ```shell
 echo 'TRAEFIK_DOMAIN=traefik.example.com' > ~/gitops/traefik.env
 echo 'EMAIL=admin@example.com' >> ~/gitops/traefik.env
-echo 'HASHED_PASSWORD='$(openssl passwd -apr1 changeit | sed -e s/\\$/\\$\\$/g) >> ~/gitops/traefik.env
+echo "HASHED_PASSWORD='$(openssl passwd -apr1 changeit)'" >> ~/gitops/traefik.env
 ```
 
 Note:
@@ -140,7 +142,7 @@ cp example.env ~/gitops/erpnext-one.env
 sed -i 's/DB_PASSWORD=123/DB_PASSWORD=changeit/g' ~/gitops/erpnext-one.env
 sed -i 's/DB_HOST=/DB_HOST=mariadb-database/g' ~/gitops/erpnext-one.env
 sed -i 's/DB_PORT=/DB_PORT=3306/g' ~/gitops/erpnext-one.env
-sed -i 's/SITES=`erp.example.com`/SITES=\`one.example.com\`,\`two.example.com\`/g' ~/gitops/erpnext-one.env
+sed -i 's/SITES_RULE=Host(`erp.example.com`)/SITES_RULE=Host(`one.example.com`) || Host(`two.example.com`)/g' ~/gitops/erpnext-one.env
 echo 'ROUTER=erpnext-one' >> ~/gitops/erpnext-one.env
 echo "BENCH_NETWORK=erpnext-one" >> ~/gitops/erpnext-one.env
 ```
@@ -202,7 +204,7 @@ sed -i 's/DB_PASSWORD=123/DB_PASSWORD=changeit/g' ~/gitops/erpnext-two.env
 sed -i 's/DB_HOST=/DB_HOST=mariadb-database/g' ~/gitops/erpnext-two.env
 sed -i 's/DB_PORT=/DB_PORT=3306/g' ~/gitops/erpnext-two.env
 echo "ROUTER=erpnext-two" >> ~/gitops/erpnext-two.env
-echo "SITES=\`three.example.com\`,\`four.example.com\`" >> ~/gitops/erpnext-two.env
+echo 'SITES_RULE=Host(`three.example.com`) || Host(`four.example.com`)' >> ~/gitops/erpnext-two.env
 echo "BENCH_NETWORK=erpnext-two" >> ~/gitops/erpnext-two.env
 ```
 
@@ -251,7 +253,7 @@ Create environment file
 
 ```shell
 echo "ROUTER=custom-one-example" > ~/gitops/custom-one-example.env
-echo "SITES=\`custom-one.example.com\`" >> ~/gitops/custom-one-example.env
+echo 'SITES_RULE=Host(`custom-one.example.com`)' >> ~/gitops/custom-one-example.env
 echo "BASE_SITE=one.example.com" >> ~/gitops/custom-one-example.env
 echo "BENCH_NETWORK=erpnext-one" >> ~/gitops/custom-one-example.env
 ```
@@ -260,7 +262,7 @@ Note:
 
 - Change the file name from `custom-one-example.env` to a logical one.
 - Change `ROUTER` variable from `custom-one.example.com` to the one being added.
-- Change `SITES` variable from `custom-one.example.com` to the one being added. You can add multiple sites quoted in backtick (`) and separated by commas.
+- Change `SITES_RULE` variable to the one being added. You can add multiple sites with `Host(...) || Host(...)`.
 - Change `BASE_SITE` variable from `one.example.com` to the one which is being pointed to.
 - Change `BENCH_NETWORK` variable from `erpnext-one` to the one which was created with the bench.
 
@@ -285,4 +287,8 @@ docker compose --project-name custom-one-example -f ~/gitops/custom-one-example.
 
 ### Site operations
 
-Refer: [site operations](./site-operations.md)
+Refer: [site operations](../04-operations/01-site-operations.md)
+
+---
+
+**Back:** [Setup Examples →](06-setup-examples.md)

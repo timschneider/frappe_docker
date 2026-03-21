@@ -1,10 +1,10 @@
-ARG PYTHON_VERSION=3.11.6
+ARG PYTHON_VERSION=3.14.2
 ARG DEBIAN_BASE=bookworm
 FROM python:${PYTHON_VERSION}-slim-${DEBIAN_BASE} AS base
 
 ARG WKHTMLTOPDF_VERSION=0.12.6.1-3
 ARG WKHTMLTOPDF_DISTRO=bookworm
-ARG NODE_VERSION=18.18.2
+ARG NODE_VERSION=24.13.0
 ENV NVM_DIR=/home/frappe/.nvm
 ENV PATH=${NVM_DIR}/versions/node/v${NODE_VERSION}/bin/:${PATH}
 
@@ -34,6 +34,8 @@ RUN useradd -ms /bin/bash frappe \
     # For healthcheck
     wait-for-it \
     jq \
+    # For MIME type detection
+    media-types \
     # NodeJS
     && mkdir -p ${NVM_DIR} \
     && curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.5/install.sh | bash \
@@ -67,8 +69,8 @@ RUN useradd -ms /bin/bash frappe \
     && chown -R frappe:frappe /var/lib/nginx \
     && chown -R frappe:frappe /run/nginx.pid
 
-COPY resources/nginx-template.conf /templates/nginx/frappe.conf.template
-COPY resources/nginx-entrypoint.sh /usr/local/bin/nginx-entrypoint.sh
+COPY resources/core/nginx/nginx-template.conf /templates/nginx/frappe.conf.template
+COPY resources/core/nginx/nginx-entrypoint.sh /usr/local/bin/nginx-entrypoint.sh
 
 FROM base AS build
 
@@ -86,6 +88,7 @@ RUN apt-get update \
     libsasl2-dev \
     libtiff5-dev \
     libwebp-dev \
+    pkg-config \
     redis-tools \
     rlwrap \
     tk8.6-dev \
@@ -100,10 +103,10 @@ USER frappe
 
 FROM build AS builder
 
-ARG FRAPPE_BRANCH=version-15
+ARG FRAPPE_BRANCH=version-16
 ARG FRAPPE_PATH=https://github.com/frappe/frappe
 ARG ERPNEXT_REPO=https://github.com/frappe/erpnext
-ARG ERPNEXT_BRANCH=version-15
+ARG ERPNEXT_BRANCH=version-16
 RUN bench init \
   --frappe-branch=${FRAPPE_BRANCH} \
   --frappe-path=${FRAPPE_PATH} \
@@ -121,7 +124,7 @@ FROM base AS erpnext
 
 USER frappe
 
-RUN echo "echo \"Commands restricted in prodution container, Read FAQ before you proceed: https://frappe.fyi/ctr-faq\"" >> ~/.bashrc
+RUN echo "echo \"Commands restricted in prodution container, Read FAQ before you proceed: https://frappe.io/ctr-faq\"" >> ~/.bashrc
 
 COPY --from=builder --chown=frappe:frappe /home/frappe/frappe-bench /home/frappe/frappe-bench
 
