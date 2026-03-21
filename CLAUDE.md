@@ -63,6 +63,7 @@ Configured hooks: black, isort (black profile), prettier, pyupgrade, shellcheck,
 ### Docker image build pipeline
 
 Two Containerfile approaches:
+
 - **`images/layered/Containerfile`** (primary, used by CI) — two-stage build using pre-built `frappe/base` and `frappe/build` images. Fast. This is what GitHub Actions uses.
 - **`images/production/Containerfile`** — full multi-stage build from scratch (base → build → builder → erpnext). Used by `docker-bake.hcl` targets.
 
@@ -72,15 +73,15 @@ Both produce a Gunicorn-based image running as user `frappe` on port 8000.
 
 `compose.yaml` defines the core services using YAML anchors (`x-customizable-image`, `x-backend-defaults`):
 
-| Service | Role |
-|---|---|
+| Service          | Role                                                          |
+| ---------------- | ------------------------------------------------------------- |
 | **configurator** | Init container — writes `common_site_config.json`, then exits |
-| **backend** | Gunicorn WSGI server (frappe.app:application) |
-| **frontend** | Nginx reverse proxy (port 8080) |
-| **websocket** | Node.js Socket.IO server (port 9000) |
-| **queue-short** | Worker: short,default queues |
-| **queue-long** | Worker: long,default,short queues |
-| **scheduler** | Cron scheduler (bench schedule) |
+| **backend**      | Gunicorn WSGI server (frappe.app:application)                 |
+| **frontend**     | Nginx reverse proxy (port 8080)                               |
+| **websocket**    | Node.js Socket.IO server (port 9000)                          |
+| **queue-short**  | Worker: short,default queues                                  |
+| **queue-long**   | Worker: long,default,short queues                             |
+| **scheduler**    | Cron scheduler (bench schedule)                               |
 
 Infrastructure services (DB, Redis, proxy) are added via `overrides/compose.*.yaml` files. The modular override pattern avoids duplicating service definitions.
 
@@ -93,6 +94,7 @@ Current apps: ERPNext, Payments, HRMS, eCommerce Integrations, Webshop, ERPNext 
 ### CI/CD
 
 GitHub Actions workflow (`.github/workflows/build_push.yml`):
+
 - Triggers on push to `release` branch or `v*` tags
 - Validates `custom_apps.json` with jq
 - Builds using `images/layered/Containerfile`
@@ -100,18 +102,19 @@ GitHub Actions workflow (`.github/workflows/build_push.yml`):
 - Generates supply chain attestation
 
 Auto-update workflow (`.github/workflows/check_updates.yml`):
+
 - Runs weekly (Monday 06:00 UTC) or on manual dispatch
 - Checks all apps in `custom_apps.json` for newer tags
 - Creates/updates a PR on `auto-update/app-versions` branch
 
 ### Key build args
 
-| Arg | Purpose |
-|---|---|
-| `FRAPPE_BRANCH` | Frappe framework version to install |
-| `FRAPPE_BUILD` | Pre-built base image tag (for layered builds) |
-| `FRAPPE_PATH` | Frappe git repository URL |
-| `APPS_JSON_BASE64` | Base64-encoded custom_apps.json |
+| Arg                | Purpose                                       |
+| ------------------ | --------------------------------------------- |
+| `FRAPPE_BRANCH`    | Frappe framework version to install           |
+| `FRAPPE_BUILD`     | Pre-built base image tag (for layered builds) |
+| `FRAPPE_PATH`      | Frappe git repository URL                     |
+| `APPS_JSON_BASE64` | Base64-encoded custom_apps.json               |
 
 ## File Conventions
 

@@ -22,21 +22,21 @@ ENV_FILE=""
 
 for arg in "$@"; do
   case "$arg" in
-    --dry-run)
-      DRY_RUN=true
-      ;;
-    -*)
-      echo "Unknown option: $arg" >&2
-      echo "Usage: $0 [--dry-run] [path/to/.env]" >&2
+  --dry-run)
+    DRY_RUN=true
+    ;;
+  -*)
+    echo "Unknown option: $arg" >&2
+    echo "Usage: $0 [--dry-run] [path/to/.env]" >&2
+    exit 1
+    ;;
+  *)
+    if [ -n "$ENV_FILE" ]; then
+      echo "Error: multiple .env paths provided" >&2
       exit 1
-      ;;
-    *)
-      if [ -n "$ENV_FILE" ]; then
-        echo "Error: multiple .env paths provided" >&2
-        exit 1
-      fi
-      ENV_FILE="$arg"
-      ;;
+    fi
+    ENV_FILE="$arg"
+    ;;
   esac
 done
 

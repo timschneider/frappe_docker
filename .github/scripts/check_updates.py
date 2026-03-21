@@ -95,10 +95,10 @@ def load_custom_apps(path: Path) -> list[AppEntry]:
 
 
 def save_custom_apps(path: Path, entries: list[AppEntry]) -> None:
-    """Write entries back to custom_apps.json with indent=4."""
+    """Write entries back to custom_apps.json with indent=2 (prettier-compatible)."""
     data = [{"url": e.url, "branch": e.branch} for e in entries]
     with open(path, "w") as f:
-        json.dump(data, f, indent=4)
+        json.dump(data, f, indent=2)
         f.write("\n")
 
 
@@ -222,9 +222,7 @@ def main() -> int:
         action="store_true",
         help="Check for updates without modifying files",
     )
-    parser.add_argument(
-        "--verbose", action="store_true", help="Enable verbose logging"
-    )
+    parser.add_argument("--verbose", action="store_true", help="Enable verbose logging")
     parser.add_argument(
         "--repo-root",
         type=Path,
