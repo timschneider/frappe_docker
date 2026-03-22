@@ -12,8 +12,21 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v6
 
+      - name: Set up Python
+        uses: actions/setup-python@v5
+
+      - name: Cache pre-commit
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/pre-commit
+            ~/.cache/pip
+          key: pre-commit-${{ hashFiles('.pre-commit-config.yaml') }}
+
       - name: Update pre-commit hooks
-        uses: vrslev/pre-commit-autoupdate@v1.0.0
+        run: |
+          pip install pre-commit
+          pre-commit autoupdate --color=always
 
       - name: Create Pull Request
         uses: peter-evans/create-pull-request@v8
