@@ -4,6 +4,7 @@ on:
   schedule:
     # Every day at 7 am
     - cron: 0 7 * * *
+  workflow_dispatch:
 
 jobs:
   pre-commit-autoupdate:
