@@ -34,5 +34,9 @@
   {
     "url": "https://github.com/alyf-de/eu_einvoice",
     "branch": "v15.16.2"
+  },
+  {
+    "url": "https://github.com/Meltingplot/Automated-purchase-process",
+    "branch": "version-15"
   }
 ]
