@@ -1,7 +1,7 @@
 [
   {
     "url": "https://github.com/frappe/erpnext",
-    "branch": "v15.101.3"
+    "branch": "v15.102.0"
   },
   {
     "url": "https://github.com/frappe/payments",
@@ -9,7 +9,7 @@
   },
   {
     "url": "https://github.com/frappe/hrms",
-    "branch": "v15.58.4"
+    "branch": "v15.58.5"
   },
   {
     "url": "https://github.com/frappe/ecommerce_integrations",
