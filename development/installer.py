@@ -131,6 +131,7 @@ def init_bench_if_not_exist(args):
             init_command += f"PYENV_VERSION={args.py_version} "
         init_command += "bench init "
         init_command += "--skip-redis-config-generation "
+        init_command += "--no-backups "
         init_command += "--verbose " if args.verbose else " "
         init_command += f"--frappe-path={args.frappe_repo} "
         init_command += f"--frappe-branch={args.frappe_branch} "

@@ -34,9 +34,12 @@ RUN export APP_INSTALL_ARGS="" && \
 ARG FRAPPE_BRANCH
 FROM frappe/base:${FRAPPE_BRANCH} AS backend
 
-RUN apt update && apt install -y \
+RUN apt-get update && apt-get install -y --no-install-recommends \
   ghostscript \
-  && apt clean
+  tesseract-ocr \
+  tesseract-ocr-deu \
+  tesseract-ocr-eng \
+  && rm -rf /var/lib/apt/lists/*
 
 USER frappe
 
