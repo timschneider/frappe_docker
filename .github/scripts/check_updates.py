@@ -7,6 +7,8 @@ import json
 import logging
 import re
 import subprocess
+import urllib.error
+import urllib.request
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -85,6 +87,44 @@ def get_latest_tag(url: str, major_version: str) -> str | None:
         logger.warning("Cannot parse tag from ref %s", ref)
         return None
     return matches[0]
+
+
+def get_latest_dockerhub_tag(image: str, major_version: str) -> str | None:
+    """Query Docker Hub for the latest semver tag matching the major version.
+
+    Docker Hub publication lags behind git tags, so we must check what is
+    actually available as an image before pinning it in versions.json.
+
+    >>> # frappe/build:v15.108.0 exists on Docker Hub; v15.108.1 may not.
+    """
+    url = (
+        f"https://hub.docker.com/v2/repositories/{image}/tags/"
+        "?page_size=100&ordering=last_updated"
+    )
+    try:
+        with urllib.request.urlopen(url, timeout=30) as resp:
+            data = json.load(resp)
+    except (urllib.error.URLError, json.JSONDecodeError) as e:
+        logger.warning("Failed to query Docker Hub for %s: %s", image, e)
+        return None
+
+    pattern = re.compile(rf"^v{re.escape(major_version)}\.(\d+)\.(\d+)$")
+    candidates: list[tuple[tuple[int, int], str]] = []
+    for tag in data.get("results", []):
+        name = tag.get("name", "")
+        m = pattern.match(name)
+        if m:
+            candidates.append(((int(m.group(1)), int(m.group(2))), name))
+
+    if not candidates:
+        logger.warning(
+            "No Docker Hub tags found for %s matching v%s.*.*",
+            image,
+            major_version,
+        )
+        return None
+
+    return max(candidates)[1]
 
 
 def load_custom_apps(path: Path) -> list[AppEntry]:
@@ -245,18 +285,28 @@ def main() -> int:
     app_updates = check_app_updates(entries, dry_run=args.dry_run)
     all_updates.extend(app_updates)
 
-    # Find erpnext and frappe tags for build config updates
+    # Find erpnext tag for example.env / pwd.yml updates
     erpnext_tag = None
-    frappe_tag = None
     for entry in entries:
         _, repo = parse_url(entry.url)
         if repo == "erpnext":
             erpnext_tag = entry.branch
-        # frappe framework is not in custom_apps.json — query it directly
-    frappe_major = extract_major_version(erpnext_tag) if erpnext_tag else None
-    if frappe_major:
-        frappe_tag = get_latest_tag("https://github.com/frappe/frappe", frappe_major)
-        logger.info("Latest frappe tag for v%s: %s", frappe_major, frappe_tag)
+
+    # versions.json must reference Docker images that exist on Docker Hub —
+    # frappe/build and frappe/base lag behind upstream git tags, so query
+    # Docker Hub directly instead of the erpnext/frappe git repos.
+    major = extract_major_version(erpnext_tag) if erpnext_tag else None
+    frappe_build_tag = None
+    frappe_base_tag = None
+    if major:
+        frappe_build_tag = get_latest_dockerhub_tag("frappe/build", major)
+        frappe_base_tag = get_latest_dockerhub_tag("frappe/base", major)
+        logger.info(
+            "Latest Docker Hub tags for v%s: frappe/build=%s, frappe/base=%s",
+            major,
+            frappe_build_tag,
+            frappe_base_tag,
+        )
 
     if not args.dry_run:
         # Save updated custom_apps.json
@@ -265,8 +315,10 @@ def main() -> int:
             logger.info("Updated custom_apps.json")
 
         # Update versions.json
-        if erpnext_tag and frappe_tag:
-            ver_updates = update_versions_json(versions_path, frappe_tag, erpnext_tag)
+        if frappe_build_tag and frappe_base_tag:
+            ver_updates = update_versions_json(
+                versions_path, frappe_base_tag, frappe_build_tag
+            )
             all_updates.extend(ver_updates)
 
         # Update example.env
