@@ -116,6 +116,88 @@ Auto-update workflow (`.github/workflows/check_updates.yml`):
 | `FRAPPE_PATH`      | Frappe git repository URL                     |
 | `APPS_JSON_BASE64` | Base64-encoded custom_apps.json               |
 
+## Devstack (VS Code Dev Container)
+
+The dev container runs a full bench under `development/frappe-bench/`. The host folder `development/` is bind-mounted into the container at `/workspace/development` (host `development/X` == container `/workspace/development/X`).
+
+### App layout — two separate git clones (intentional)
+
+| Path | Role | git remote | Branch |
+| --- | --- | --- | --- |
+| `development/apps/Automated-purchase-process` | **Dev source of truth** — edit & commit here | `origin` → github.com/Meltingplot/Automated-purchase-process | `main` |
+| `development/frappe-bench/apps/procurement_ai` | **Live code in the bench** (editable-installed, what Frappe imports) | `upstream` → `/workspace/development/apps/Automated-purchase-process` (local path) | `main` |
+
+These are **independent clones**, not symlinked/bind-linked. Editing the standalone does **not** appear in the running bench until you propagate (see below). The app's real name is **`procurement_ai`** (Python module + `apps.txt` entry + dir under `apps/`). It was historically `erpnext_procurement_ai`; that name is dead — never reintroduce it.
+
+### Propagation: standalone → bench (the dev loop)
+
+**Rule: propagate by running `git pull` directly inside the bench clone** (`frappe-bench/apps/procurement_ai`) — never by re-running `bench get-app` for an already-installed app, and never by editing the bench clone directly.
+
+1. Edit + **commit** in `development/apps/Automated-purchase-process` (uncommitted changes do not transfer).
+2. Pull into the bench clone from its `upstream` (the local standalone):
+   ```bash
+   cd /workspace/development/frappe-bench/apps/procurement_ai
+   git pull upstream main          # or: git fetch upstream && git reset --hard upstream/main
+   ```
+3. Apply the change in the running bench:
+   ```bash
+   bench build --app procurement_ai                       # JS/CSS changes only
+   bench restart                                          # Python changes
+   bench --site development.localhost migrate             # new fixtures / patches / DocTypes
+   ```
+
+> This `git pull` does **not** appear in `bench.log` (which only records `bench` commands). To audit propagation history, use `git reflog` / `git log` in the bench clone, not `bench.log`.
+
+### Install / update / uninstall
+
+Run inside `/workspace/development/frappe-bench`. The active site is **`development.localhost`**.
+
+```bash
+# Install (clone into bench + editable pip install + build), then add to the site
+bench get-app --resolve-deps /workspace/development/apps/Automated-purchase-process
+bench --site development.localhost install-app procurement_ai
+bench --site development.localhost migrate
+
+# Update: see "Propagation" above (git pull upstream + build/restart/migrate)
+
+# Uninstall — ORDER AND FLAGS MATTER:
+bench --site development.localhost uninstall-app procurement_ai   # remove from site (drops its tables)
+bench remove-app procurement_ai --force                          # remove from bench
+```
+
+**Uninstall gotchas (learned the hard way):**
+- `remove-app` is a **bench-global** command — it takes **no `--site`** (that errors with `No such option: --site`).
+- `remove-app` validates "is it installed on any site?" via a cached `list-apps` that can be **stale** even after a successful `uninstall-app`, blocking with `Cannot remove, app is installed on site`. `--force` skips that check. If still stuck: `bench --site development.localhost remove-from-installed-apps procurement_ai && bench --site development.localhost clear-cache`, then retry.
+- `remove-app` moves the dir to `archived/apps/procurement_ai-<date>` (doesn't delete). Clean up with `rm -rf archived/apps/procurement_ai-*`.
+
+### Dependencies — keep `easyocr` out
+
+`easyocr` pulls **torch/CUDA (~4 GB)**. It is **optional and lazy-imported** (only inside `extraction/ocr_engine._extract_easyocr`), so it must **not** be in `pyproject.toml` `dependencies`. If a `bench get-app` / `pip install -e` hangs after "Built procurement-ai … Released lock", it is downloading torch — kill it and confirm `easyocr` is absent from `pyproject.toml`. `requirements.txt` already omits it; keep the two consistent.
+
+### How Claude interacts with the dev container
+
+The container is the compose service `frappe` (project `frappe_docker_devcontainer`). Resolve it by name (stable across rebuilds, unlike the short ID) and `docker exec` with a login shell:
+
+```bash
+CID=$(docker ps -qf name=devcontainer-frappe-1)
+docker exec "$CID" bash -lc 'cd /workspace/development/frappe-bench && bench --site development.localhost <cmd>'
+```
+
+- File edits: do them on the **host** path `development/...` (bind-mounted, instantly visible in the container) — no `docker cp` needed.
+- `bench`/`git pull`/`migrate`/process inspection: must run **inside** the container via `docker exec`.
+- The container has no `ps`/`top` (no `procps`). List processes via `/proc`:
+  `for p in /proc/[0-9]*; do printf '%s\t%s\n' "${p#/proc/}" "$(tr '\0' ' ' < "$p/cmdline" 2>/dev/null)"; done`
+
+### Reading encrypted Settings (e.g. API keys)
+
+`AI Procurement Settings` stores provider keys (`claude_api_key`, `openai_api_key`, …) as Password fields — encrypted with the site's `encryption_key`, so the raw DB/`__Auth` value is ciphertext. Decrypt via bench:
+
+```bash
+docker exec "$CID" bash -lc 'cd /workspace/development/frappe-bench && bench --site development.localhost console' <<<'
+from frappe.utils.password import decrypt
+print(decrypt(frappe.db.get_single_value("AI Procurement Settings", "claude_api_key")))'
+```
+
 ## File Conventions
 
 - Shell scripts: formatted with shfmt, linted with shellcheck (`-x` flag for sourced files)
