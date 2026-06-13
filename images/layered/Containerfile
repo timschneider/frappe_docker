@@ -31,6 +31,14 @@ RUN export APP_INSTALL_ARGS="" && \
   echo "{}" > sites/common_site_config.json && \
   find apps -mindepth 1 -path "*/.git" | xargs rm -fr
 
+# cryptography>=42 removed the GEN_* FFI bindings that pyOpenSSL<23.2.0
+# references at import time. With an outdated pyOpenSSL in the env, any TLS
+# path through botocore -> urllib3.contrib.pyopenssl -> OpenSSL.crypto crashes
+# ("module 'lib' has no attribute 'GEN_EMAIL'"), e.g. when Frappe registers the
+# S3 backup scheduler methods during migrate. Upgrade pyOpenSSL to match the
+# installed cryptography.
+RUN /home/frappe/frappe-bench/env/bin/pip install --no-cache-dir --upgrade "pyOpenSSL>=23.2.0"
+
 ARG FRAPPE_BRANCH
 FROM frappe/base:${FRAPPE_BRANCH} AS backend
 

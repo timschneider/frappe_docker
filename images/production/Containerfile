@@ -120,6 +120,13 @@ RUN bench init \
   echo "{}" > sites/common_site_config.json && \
   find apps -mindepth 1 -path "*/.git" | xargs rm -fr
 
+# cryptography>=42 removed the GEN_* FFI bindings that pyOpenSSL<23.2.0
+# references at import time, crashing any TLS path through
+# botocore -> urllib3.contrib.pyopenssl -> OpenSSL.crypto
+# ("module 'lib' has no attribute 'GEN_EMAIL'"). Upgrade pyOpenSSL to match
+# the installed cryptography.
+RUN /home/frappe/frappe-bench/env/bin/pip install --no-cache-dir --upgrade "pyOpenSSL>=23.2.0"
+
 FROM base AS erpnext
 
 USER frappe
