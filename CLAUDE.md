@@ -122,9 +122,9 @@ The dev container runs a full bench under `development/frappe-bench/`. The host 
 
 ### App layout — two separate git clones (intentional)
 
-| Path | Role | git remote | Branch |
-| --- | --- | --- | --- |
-| `development/apps/Automated-purchase-process` | **Dev source of truth** — edit & commit here | `origin` → github.com/Meltingplot/Automated-purchase-process | `main` |
+| Path                                           | Role                                                                 | git remote                                                                         | Branch |
+| ---------------------------------------------- | -------------------------------------------------------------------- | ---------------------------------------------------------------------------------- | ------ |
+| `development/apps/Automated-purchase-process`  | **Dev source of truth** — edit & commit here                         | `origin` → github.com/Meltingplot/Automated-purchase-process                       | `main` |
 | `development/frappe-bench/apps/procurement_ai` | **Live code in the bench** (editable-installed, what Frappe imports) | `upstream` → `/workspace/development/apps/Automated-purchase-process` (local path) | `main` |
 
 These are **independent clones**, not symlinked/bind-linked. Editing the standalone does **not** appear in the running bench until you propagate (see below). The app's real name is **`procurement_ai`** (Python module + `apps.txt` entry + dir under `apps/`). It was historically `erpnext_procurement_ai`; that name is dead — never reintroduce it.
@@ -166,6 +166,7 @@ bench remove-app procurement_ai --force                          # remove from b
 ```
 
 **Uninstall gotchas (learned the hard way):**
+
 - `remove-app` is a **bench-global** command — it takes **no `--site`** (that errors with `No such option: --site`).
 - `remove-app` validates "is it installed on any site?" via a cached `list-apps` that can be **stale** even after a successful `uninstall-app`, blocking with `Cannot remove, app is installed on site`. `--force` skips that check. If still stuck: `bench --site development.localhost remove-from-installed-apps procurement_ai && bench --site development.localhost clear-cache`, then retry.
 - `remove-app` moves the dir to `archived/apps/procurement_ai-<date>` (doesn't delete). Clean up with `rm -rf archived/apps/procurement_ai-*`.
