@@ -1,7 +1,7 @@
 [
   {
     "url": "https://github.com/frappe/erpnext",
-    "branch": "v15.124.5"
+    "branch": "v15.125.0"
   },
   {
     "url": "https://github.com/frappe/payments",
@@ -33,7 +33,7 @@
   },
   {
     "url": "https://github.com/alyf-de/eu_einvoice",
-    "branch": "v15.17.0"
+    "branch": "v15.18.0"
   },
   {
     "url": "https://github.com/Meltingplot/Automated-purchase-process",
